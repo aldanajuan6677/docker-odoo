@@ -23,8 +23,6 @@ class FleetInspection(models.Model):
         string="Vehículo",
         required=True,
         tracking=True,
-        readonly=True,
-        states={"draft": [("readonly", False)]},
     )
     vehicle_type = fields.Selection(
         VEHICLE_TYPES,
@@ -32,8 +30,6 @@ class FleetInspection(models.Model):
         required=True,
         default="car",
         tracking=True,
-        readonly=True,
-        states={"draft": [("readonly", False)]},
     )
     inspector_id = fields.Many2one(
         "res.users",
@@ -91,14 +87,16 @@ class FleetInspection(models.Model):
             vals["line_ids"] = [(0, 0, {"item_id": item.id}) for item in items]
         return super(FleetInspection, self).create(vals)
 
-    def name_get(self):
-        result = []
+    @api.depends("name", "vehicle_id", "vehicle_id.license_plate", "vehicle_id.name")
+    def _compute_display_name(self):
         for inspection in self:
-            label = inspection.name
             if inspection.vehicle_id:
-                label = "%s - %s" % (inspection.name, inspection.vehicle_id.license_plate or inspection.vehicle_id.name)
-            result.append((inspection.id, label))
-        return result
+                inspection.display_name = "%s - %s" % (
+                    inspection.name,
+                    inspection.vehicle_id.license_plate or inspection.vehicle_id.name,
+                )
+            else:
+                inspection.display_name = inspection.name
 
     def action_start(self):
         for inspection in self:
