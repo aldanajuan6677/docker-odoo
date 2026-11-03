@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista de Lista -->
+    <record id="view_payment_request_tree" model="ir.ui.view">
+        <field name="name">payment.request.tree</field>
+        <field name="model">payment.request</field>
+        <field name="arch" type="xml">
+            <list string="Solicitudes de Pago">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="partner_id"/>
+                <field name="user_id" widget="many2one_avatar_user"/>
+                <field name="amount" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                <field name="currency_id" invisible="1"/>
+                <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-warning="state == 'submitted'" decoration-success="state == 'approved' or state == 'paid'" decoration-danger="state == 'rejected'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Vista de Formulario -->
+    <record id="view_payment_request_form" model="ir.ui.view">
+        <field name="name">payment.request.form</field>
+        <field name="model">payment.request</field>
+        <field name="arch" type="xml">
+            <form string="Solicitud de Pago">
+                <header>
+                    <!-- Botón Enviar: Visible en borrador para cualquier usuario -->
+                    <button name="action_submit" string="Enviar Solicitud" type="object" class="oe_highlight" invisible="state != 'draft'"/>
+                    
+                    <!-- Botones de Aprobador / Gerencia -->
+                    <button name="action_approve" string="Aprobar" type="object" class="oe_highlight" groups="payment_request.group_payment_approerv,payment_request.group_payment_treasury" invisible="state != 'submitted'"/>
+                    <button name="action_reject" string="Rechazar" type="object" class="btn-danger" groups="payment_request.group_payment_approerv,payment_request.group_payment_treasury" invisible="state != 'submitted'"/>
+                    
+                    <!-- Botones de Tesorería -->
+                    <button name="action_pay" string="Registrar Pago" type="object" class="oe_highlight" groups="payment_request.group_payment_treasury" invisible="state != 'approved'"/>
+                    
+                    <!-- Volver a borrador si fue rechazada -->
+                    <button name="action_draft" string="Restablecer a Borrador" type="object" invisible="state != 'rejected'"/>
+                    
+                    <field name="state" widget="statusbar" statusbar_visible="draft,submitted,approved,paid"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="partner_id" readonly="state != 'draft'"/>
+                            <field name="amount" readonly="state != 'draft'"/>
+                            <field name="currency_id" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="user_id" readonly="1"/>
+                            <field name="date" readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+                    <group string="Concepto y Justificación">
+                        <field name="concept" nolabel="1" placeholder="Indique detalladamente el concepto del pago..." readonly="state != 'draft'"/>
+                    </group>
+                </sheet>
+                <!-- Chatter para comentarios y actividades -->
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista de Búsqueda y Filtros -->
+    <record id="view_payment_request_search" model="ir.ui.view">
+        <field name="name">payment.request.search</field>
+        <field name="model">payment.request</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Solicitudes">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="concept"/>
+                <separator/>
+                <filter string="Borrador" name="filter_draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Enviadas" name="filter_submitted" domain="[('state', '=', 'submitted')]"/>
+                <filter string="Aprobadas" name="filter_approved" domain="[('state', '=', 'approved')]"/>
+                <filter string="Pagadas" name="filter_paid" domain="[('state', '=', 'paid')]"/>
+                <filter string="Rechazadas" name="filter_rejected" domain="[('state', '=', 'rejected')]"/>
+                <group expand="0" string="Agrupar Por">
+                    <filter string="Proveedor" name="group_by_partner" context="{'group_by': 'partner_id'}"/>
+                    <filter string="Estado" name="group_by_state" context="{'group_by': 'state'}"/>
+                    <filter string="Solicitante" name="group_by_user" context="{'group_by': 'user_id'}"/>
+                    <filter string="Fecha" name="group_by_date" context="{'group_by': 'date'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Acción de Ventana (Window Action) -->
+    <record id="action_payment_request" model="ir.actions.act_window">
+        <field name="name">Solicitudes de Pago</field>
+        <field name="res_model">payment.request</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_payment_request_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Crea tu primera solicitud de pago a proveedores
+            </p>
+        </field>
+    </record>
+
+    <!-- Menús de Navegación -->
+    <menuitem id="menu_payment_request_root" name="Pagos" sequence="20"/>
+    <menuitem id="menu_payment_request_sub" name="Solicitudes" parent="menu_payment_request_root" action="action_payment_request" sequence="10"/>
+</odoo>
