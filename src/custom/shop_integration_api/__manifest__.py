@@ -4,7 +4,9 @@
     'category': 'Website',
     'summary': 'Endpoints para integración de productos con tienda en línea',
     'depends': ['base', 'stock', 'sale'],
-    'data': [],
+    'data': [
+        'security/ir.model.access.csv',
+    ],
     'installable': True,
     'application': False,
     'auto_install': False,
